@@ -4,64 +4,64 @@ type nat =
 
 type key = int
 
-module type SET_OF_ORDERED = 
- sig 
-  type set 
-  
+module type SET_OF_ORDERED =
+ sig
+  type set
+
   val empty : set
-  
+
   val member : key -> set -> bool
-  
+
   val insert : key -> set -> set
  end
 
-module RedBlackTree = 
- struct 
+module RedBlackTree =
+ struct
   type color =
   | Red
   | Black
-  
+
   (** val color_rect : 'a1 -> 'a1 -> color -> 'a1 **)
-  
+
   let color_rect f f0 = function
   | Red -> f
   | Black -> f0
-  
+
   (** val color_rec : 'a1 -> 'a1 -> color -> 'a1 **)
-  
+
   let color_rec f f0 = function
   | Red -> f
   | Black -> f0
-  
+
   type tree =
   | E
   | T of color * tree * key * tree
-  
+
   (** val tree_rect :
       'a1 -> (color -> tree -> 'a1 -> key -> tree -> 'a1 -> 'a1) -> tree ->
       'a1 **)
-  
+
   let rec tree_rect f f0 = function
   | E -> f
   | T (c, t0, k, t1) -> f0 c t0 (tree_rect f f0 t0) k t1 (tree_rect f f0 t1)
-  
+
   (** val tree_rec :
       'a1 -> (color -> tree -> 'a1 -> key -> tree -> 'a1 -> 'a1) -> tree ->
       'a1 **)
-  
+
   let rec tree_rec f f0 = function
   | E -> f
   | T (c, t0, k, t1) -> f0 c t0 (tree_rec f f0 t0) k t1 (tree_rec f f0 t1)
-  
+
   (** val member : key -> tree -> bool **)
-  
+
   let rec member x = function
   | E -> false
   | T (c, tl, k, tr) ->
     if (<) x k then member x tl else if (<) k x then member x tr else true
-  
+
   (** val balance : color -> tree -> key -> tree -> tree **)
-  
+
   let balance rb t1 k t2 =
     match rb with
     | Red -> T (Red, t1, k, t2)
@@ -274,52 +274,51 @@ module RedBlackTree =
                                 c5, z, d0)))
                             | Black -> T (Black, t1, k, t2)))))
                 | Black -> T (Black, t1, k, t2)))))
-  
+
   (** val makeBlack : tree -> tree **)
-  
+
   let makeBlack = function
   | E -> E
   | T (c, a, x, b) -> T (Black, a, x, b)
-  
+
   (** val ins : key -> tree -> tree **)
-  
+
   let rec ins x = function
   | E -> T (Red, E, x, E)
   | T (c, a, y, b) ->
     if (<) x y
     then balance c (ins x a) y b
     else if (<) y x then balance c a y (ins x b) else T (c, a, x, b)
-  
+
   (** val insert : key -> tree -> tree **)
-  
+
   let insert x s =
     makeBlack (ins x s)
-  
+
   (** val interp'_rect : tree -> key -> 'a1 **)
-  
+
   let interp'_rect t k =
     assert false (* absurd case *)
-  
+
   (** val interp'_rec : tree -> key -> 'a1 **)
-  
+
   let interp'_rec t k =
     assert false (* absurd case *)
-  
+
   (** val nearly_redblack_rect : tree -> nat -> 'a1 **)
-  
+
   let nearly_redblack_rect t n =
     assert false (* absurd case *)
-  
+
   (** val nearly_redblack_rec : tree -> nat -> 'a1 **)
-  
+
   let nearly_redblack_rec t n =
     assert false (* absurd case *)
-  
+
   type set = tree
-  
+
   (** val empty : tree **)
-  
+
   let empty =
     E
  end
-

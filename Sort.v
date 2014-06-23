@@ -45,7 +45,7 @@ Qed.
 
 (* PART I.   Prove correctness of functional program for insertion sort  *)
 
-Fixpoint insert (i:nat) (l: list nat) := 
+Fixpoint insert (i:nat) (l: list nat) :=
   match l with
   | nil => i::nil
   | h::t => if ble_nat i h then i::h::t else h :: insert i t

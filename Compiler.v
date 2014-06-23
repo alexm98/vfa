@@ -39,21 +39,21 @@ Inductive exec_list: state -> list instr -> state -> Prop :=
 
 Hint Constructors exec_list.
 
-(** Here's the compiler for arithmetic expressions.   
+(** Here's the compiler for arithmetic expressions.
       It uses variables >= N as scratch temporaries for subexpressions *)
 Fixpoint compile_aexp (N: nat) (a: aexp) : list instr :=
   match a with
   | ANum n =>  i_num n (Id N) :: nil
   | AId i => i_move i (Id N) :: nil
-  | APlus a1 a2 => compile_aexp N a1 ++ compile_aexp (S N) a2 ++ 
+  | APlus a1 a2 => compile_aexp N a1 ++ compile_aexp (S N) a2 ++
                                i_plus (Id N) (Id (S N)) (Id N) :: nil
-  | AMinus a1 a2 => compile_aexp N a1 ++ compile_aexp (S N) a2 ++ 
+  | AMinus a1 a2 => compile_aexp N a1 ++ compile_aexp (S N) a2 ++
                                i_minus (Id N) (Id (S N)) (Id N) :: nil
-  | AMult a1 a2 => compile_aexp N a1 ++ compile_aexp (S N) a2 ++ 
+  | AMult a1 a2 => compile_aexp N a1 ++ compile_aexp (S N) a2 ++
                                i_mult (Id N) (Id (S N)) (Id N) :: nil
  end.
 
-Fixpoint compile_com (N: nat) (c: com) : list instr := 
+Fixpoint compile_com (N: nat) (c: com) : list instr :=
  match c with
   | CSkip => nil
   | CAss i a => compile_aexp N a ++ i_move (Id N) i :: nil
@@ -86,7 +86,7 @@ Example check_my_prog:
 Proof. simpl. intuition. Qed.
 
 Example compile_my_prog:
-   compile_com 10 my_prog = 
+   compile_com 10 my_prog =
     i_move Y (Id 10)
     :: i_num 1 (Id 11)
     :: i_plus (Id 10) (Id 11) (Id 10)
@@ -96,7 +96,7 @@ Example compile_my_prog:
     :: i_move Y (Id 12)
     :: i_plus (Id 11) (Id 12) (Id 11)
     :: i_mult (Id 10) (Id 11) (Id 10)
-    :: i_move (Id 10) Y 
+    :: i_move (Id 10) Y
     :: nil.
 Proof. reflexivity. Qed.
 
@@ -119,7 +119,7 @@ Qed.
 Definition wrong_compiler_correctness_specification :=
      forall c N, check_com N c ->
            forall st stx, exec_list st (compile_com N c) stx ->
-                      ceval c st stx. 
+                      ceval c st stx.
 
 Theorem wrong_specification_wrong:
   ~ wrong_compiler_correctness_specification.
@@ -139,7 +139,7 @@ Ltac inv H := inversion H; clear H; subst.
 
 (** **** Exercise: 3 stars (exec_list_lemmas) *)
 Lemma exec_list_app:
-    forall il1 il2 st1 st2 st3, 
+    forall il1 il2 st1 st2 st3,
       exec_list st1 il1 st2 -> exec_list st2 il2 st3 ->
       exec_list st1 (il1++il2) st3.
 (* FILL IN HERE *) Admitted.
@@ -151,7 +151,7 @@ Lemma exec_list_app_inv:
 (* FILL IN HERE *) Admitted.
 (** [] *)
 
-Ltac overr := rewrite update_neq; 
+Ltac overr := rewrite update_neq;
                          [| intro Hx; inv  Hx; subst; omega].
 
 (* The tactic [crunch] is an example of the "Adam Chlipala style"; just
@@ -162,12 +162,12 @@ Ltac overr := rewrite update_neq;
    http://adam.chlipala.net/cpdt/
 *)
 
-Ltac crunch := 
-          intros; 
+Ltac crunch :=
+          intros;
           repeat
              first [rewrite update_eq
-                    | overr 
-                    | match goal with 
+                    | overr
+                    | match goal with
                         | H: False |- _ => contradiction
                         | H: _ /\ _ |- _  => destruct H
                         | H: exec_list _ (_ ++ _) _ |- _ =>
@@ -195,7 +195,7 @@ Qed.
 
 Hint Resolve same_below_refl.
 
-Lemma same_below_sym: forall N st st', 
+Lemma same_below_sym: forall N st st',
         same_below N st st' -> same_below N st' st.
 Proof.
 unfold same_below; intros. symmetry; auto.
@@ -210,9 +210,9 @@ Qed.
 
 (** **** Exercise: 2 stars (same_below_update) *)
 Lemma same_below_update:
-  forall i N v v' st st', 
+  forall i N v v' st st',
          v = v' ->
-        same_below N st st' -> 
+        same_below N st st' ->
         same_below N (update st i v) (update st' i v').
 Proof.
 (* FILL IN HERE *) Admitted.
@@ -231,14 +231,14 @@ unfold same_below.
      "Focus" to examine each of the 5 subgoals.  Now, put "crunch" back,
      notice that it has already disposed of 2 subgoals and made some progress
      in the other 3, and finish the proof.
-*)     
+*)
 (* FILL IN HERE *) Admitted.
 (** [] *)
 
 (** **** Exercise: 2 stars (aeval_same_below) *)
 Lemma aeval_same_below:
   forall st st' a N,
-   check_exp N a ->  
+   check_exp N a ->
    same_below N st st' ->
    aeval st a = aeval st' a.
 Proof.
@@ -248,7 +248,7 @@ unfold same_below.
 (** [] *)
 
 (** **** Exercise: 3 stars (compile_aexp_correct) *)
-Theorem compile_aexp_correct: 
+Theorem compile_aexp_correct:
      forall a N, check_exp N a ->
            forall st st', exec_list st (compile_aexp N a) st' ->
                     st' (Id N) = aeval st a.
@@ -259,8 +259,8 @@ Proof.
 
 
 (**  Consider an arithmetic expression [a] with no variables named N or above,
-      and compile it with [compile N a]. 
-      Now we believe that executing the compiled expression [compile N a] 
+      and compile it with [compile N a].
+      Now we believe that executing the compiled expression [compile N a]
       should not affect any variables below N.  That is, if [st1] and [st1'] are
       the same below N, and we can execute from [st1] to get [st2], then
       we should be able to execute from st1' to get st2'.   Not only must
@@ -317,5 +317,3 @@ unfold compiler_correctness_specification.
 (* FILL IN HERE *) Admitted.
 
 (** [] *)
-
-

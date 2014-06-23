@@ -1,9 +1,9 @@
 (* Implementation and correctness proof of fast mergeable priority queues
-   using binomial queues.   Andrew W. Appel, October 2009.   
+   using binomial queues.   Andrew W. Appel, October 2009.
 
  Required reading:
  "Binomial Queues", Section 9.7 of
-  Algorithms 3rd Edition in Java, Parts 1-4: 
+  Algorithms 3rd Edition in Java, Parts 1-4:
     Fundamentals, Data Structures, Sorting, and Searching,
   by Robert Sedgewick.  Addison-Wesley, 2002.
   http://www.cs.princeton.edu/~appel/BQ.pdf
@@ -29,7 +29,7 @@ Inductive tree : Type :=
 |  Leaf : tree.
 
 (* A priority queue (using the binomial queues data structure)
-   is a list of trees.  
+   is a list of trees.
    The i'th element of the list is either Leaf or it is a
    power-of-2-heap with exactly 2^i nodes.
 *)
@@ -40,13 +40,13 @@ Definition emptyQ : priqueue := nil.
 
 Definition smash (t u:  tree) : tree :=
   match t , u with
-  |  Node x t1 Leaf, Node y u1 Leaf => 
+  |  Node x t1 Leaf, Node y u1 Leaf =>
                    if  bgt_nat x y then Node x (Node y u1 t1) Leaf
                                 else Node y (Node x t1 u1) Leaf
   | _ , _ => Leaf  (* arbitrary bogus tree *)
   end.
 
-Fixpoint carry (q: list tree) (t: tree) : list tree := 
+Fixpoint carry (q: list tree) (t: tree) : list tree :=
   match q, t with
   | nil, Leaf        => nil
   | nil, _            => t :: nil
@@ -55,7 +55,7 @@ Fixpoint carry (q: list tree) (t: tree) : list tree :=
   | u :: q', _       => Leaf :: carry q' (smash t u)
  end.
 
-Definition insert (q: priqueue) (x: key) : priqueue := 
+Definition insert (q: priqueue) (x: key) : priqueue :=
      carry q (Node x Leaf Leaf).
 
 (* Do the query "Print fold_left" to see how fold_left works.  *)
@@ -80,7 +80,7 @@ Fixpoint unzip (t: tree) (cont: priqueue -> priqueue) : priqueue :=
   end.
 
 Definition heap_delete_max (t: tree) : priqueue :=
-  match t with 
+  match t with
     Node x t1 Leaf  => unzip t1 (fun u => u)
   | _ => nil   (* bogus value for ill-formed or empty trees *)
   end.
@@ -182,7 +182,7 @@ Fixpoint pow2heap' (n: nat) (m: key) (t: tree) :=
  end.
 
 (* t is a power-of-2 heap of depth n *)
-Definition pow2heap (n: nat) (t: tree) := 
+Definition pow2heap (n: nat) (t: tree) :=
   match t with
     Node m t1 Leaf => pow2heap' n m t1
   | _ => False
@@ -190,7 +190,7 @@ Definition pow2heap (n: nat) (t: tree) :=
 
 (* l is the i'th tail of a binomial heap *)
 Fixpoint priq'  (i: nat) (l: list tree) : Prop :=
-   match l with 
+   match l with
   | t :: l' => (t=Leaf \/ pow2heap i t) /\ priq' (S i) l'
   | nil => True
  end.
@@ -203,20 +203,20 @@ Definition priq (q: priqueue) : Prop := priq' 0 q.
 
 (* This theorem shows a convenient way of proving theorems involving bgt_nat.
    It's worth studying the proof carefully. *)
-Example example:  forall a b c d, 
-    true = bgt_nat a b -> 
-    false = bgt_nat c d -> 
+Example example:  forall a b c d,
+    true = bgt_nat a b ->
+    false = bgt_nat c d ->
     true = bgt_nat (a+d) (b+c).
 Proof.
 intros.
 (* Step one: Change hypotheses about bgt_nat to hypotheses about gt.  *)
  apply bgt_nat_e in H. apply false_bgt_nat_e in H0.
 (* Step two: Change proof-goal about bgt_nat to proof-goal about gt. *)
-apply bgt_nat_i. 
+apply bgt_nat_i.
 (* Step three:  omega tactic can solve proof goals about lt, eq, gt,
   given hypotheses about lt, eq, gt of nats. *)
-omega. 
- (* Step through this example, and to see the principle of how to 
+omega.
+ (* Step through this example, and to see the principle of how to
       use the omega tactic. *)
 Qed.
 
@@ -236,8 +236,8 @@ Theorem smash_valid:
 Inductive tree_elems: tree -> list key -> Prop :=
 | tree_elems_leaf: tree_elems Leaf nil
 | tree_elems_node:  forall bl br v tl tr b,
-           tree_elems tl bl -> 
-           tree_elems tr br -> 
+           tree_elems tl bl ->
+           tree_elems tr br ->
            Permutation b (v::bl++br) ->
            tree_elems (Node v tl tr) b.
 
@@ -257,9 +257,9 @@ Theorem tree_elems_ext: forall t e1 e2,
 
 (** **** Exercise: 3 stars (permut_example) *)
 (* To prove this next example, you'll also want to apply some theorems about the "app"
-  function (which is the function behind the ++ notation.  Do "SearchAbout app" in the 
+  function (which is the function behind the ++ notation.  Do "SearchAbout app" in the
   Query window.  My favorites are app_nil_end and app_ass.  *)
-Example permut_example:  
+Example permut_example:
           forall (a b: list key),  Permutation (5::6::a++b) ((5::b)++(6::a++[])).
 (* FILL IN HERE *) Admitted.
 (** [] *)
@@ -277,7 +277,7 @@ Theorem smash_elems: forall n t u bt bu,
 (** **** Exercise: 3 stars (priqueue_elems) *)
 (* Make an inductive definition, similar to tree_elems, to relate
   a priority queue  "l"  to a list of all its elements.  *)
-Inductive priqueue_elems: list tree -> list key -> Prop := 
+Inductive priqueue_elems: list tree -> list key -> Prop :=
              (* FILL IN HERE *)
 .
 (** [] *)
@@ -292,22 +292,22 @@ Theorem priqueue_elems_ext: forall q e1 e2,
 
 
 (** **** Exercise: 3 stars (carry_valid) *)
-Theorem carry_valid: 
-           forall n q,  priq' n q -> 
+Theorem carry_valid:
+           forall n q,  priq' n q ->
            forall t, (t=Leaf \/ pow2heap n t) -> priq' n (carry q t).
 (* FILL IN HERE *) Admitted.
 (** [] *)
 
-(* Here ends the main part of the exercise.  
-   The rest are "extra challenge" problems, 
+(* Here ends the main part of the exercise.
+   The rest are "extra challenge" problems,
    which you can do if you have the time and the inclination.  *)
 
 (** **** Exercise: 4 stars (carry_elems) *)
-Theorem carry_elems: 
-      forall n q,  priq' n q -> 
-      forall t, (t=Leaf \/ pow2heap n t) -> 
-      forall eq et, priqueue_elems q eq -> 
-                          tree_elems t et ->  
+Theorem carry_elems:
+      forall n q,  priq' n q ->
+      forall t, (t=Leaf \/ pow2heap n t) ->
+      forall eq et, priqueue_elems q eq ->
+                          tree_elems t et ->
                           priqueue_elems (carry q t) (eq++et).
 (* FILL IN HERE *) Admitted.
 (** [] *)
@@ -318,8 +318,8 @@ Theorem insert_valid: forall q x, priq q -> priq (insert q x).
 (** [] *)
 
 (** **** Exercise: 2 stars (insert_elems) *)
-Theorem insert_elems: 
-                  forall q x, priq q -> 
+Theorem insert_elems:
+                  forall q x, priq q ->
                   forall e, priqueue_elems q e ->
                               priqueue_elems (insert q x) (x::e).
 (* FILL IN HERE *) Admitted.
@@ -331,14 +331,14 @@ Theorem join_valid: forall p q c n, priq' n p -> priq' n q -> (c=Leaf \/ pow2hea
 (** [] *)
 
 (** **** Exercise: 4 stars (join_elems) *)
-Theorem join_elems: 
-                forall p q c n, 
-                      priq' n p -> 
-                      priq' n q -> 
+Theorem join_elems:
+                forall p q c n,
+                      priq' n p ->
+                      priq' n q ->
                       (c=Leaf \/ pow2heap n c) ->
-                  forall pe qe ce, 
-                             priqueue_elems p pe -> 
-                             priqueue_elems q qe -> 
+                  forall pe qe ce,
+                             priqueue_elems p pe ->
+                             priqueue_elems q qe ->
                              tree_elems c ce ->
                               priqueue_elems (join p q c) (ce++pe++qe).
 (* FILL IN HERE *) Admitted.

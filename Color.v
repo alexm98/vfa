@@ -2,9 +2,9 @@
    by Andrew W. Appel, 2011.
 
   Required reading:
-  Formal Verification of Coalescing Graph-Coloring Register Allocation, 
-  by Sandrine Blazy, Benoit Robillard, and Andrew W. Appel. 
-  ESOP 2010: 19th European Symposium on Programming, pp. 145-164, March 2010. 
+  Formal Verification of Coalescing Graph-Coloring Register Allocation,
+  by Sandrine Blazy, Benoit Robillard, and Andrew W. Appel.
+  ESOP 2010: 19th European Symposium on Programming, pp. 145-164, March 2010.
   http://www.cs.princeton.edu/~appel/papers/regalloc.pdf
 
   We implement a program to K-color an undirected graph, perhaps leaving
@@ -12,14 +12,14 @@
   correspond to variables in a program, the colors correspond to registers,
   and the graph edges are interference constraints:  two nodes connected
   by an edge cannot be assigned the same color.  Nodes left uncolored are
-  "spilled," that is, a register allocator would implement such nodes in 
+  "spilled," that is, a register allocator would implement such nodes in
   memory locations instead of in registers.  We desire to have as few
   uncolored nodes as possible, but this desire is not formally specified.
 
   In this exercise we show a simple and unsophisticated algorithm; the program
   described by Blazy et al. (cited above) is more sophisticated in several ways,
-  such as the use of "register coalescing" to get better results and the use of 
-  worklists to make it run faster.  
+  such as the use of "register coalescing" to get better results and the use of
+  worklists to make it run faster.
 
   Our algorithm does, at least, make use of efficient data structures for
   representing undirected graphs, adjacency sets, and so on.
@@ -39,18 +39,18 @@ Require Import Compare_dec.  (* to get lt_dec on natural numbers *)
   functional representation of sets over some element type,
   with logarithmic-time membership test and add-one-element,
   and linear-time or NlogN set union.  The type of keys (members of sets, indexes
-  of maps) will be E.t;  and type type of sets will be S.t, and maps from E.t to A 
+  of maps) will be E.t;  and type type of sets will be S.t, and maps from E.t to A
   will be M.t(A) for any type A.
- 
+
    We choose the "positive" type, because the Coq library has particularly efficient
    implementations of sets and maps on positives.  But our proofs will
   be easier if we hide the particular representation type.  We would like to say,
    Module E <: OrderedType := PositiveOrderedTypeBits.
    Module S <: (FSetInterface.S with Module E := E) := PositiveSet.
    Module M <: (FMapInterface.S with Module E := E) := PositiveMap.
-  but for a stupid Coq technical reason (transparency of definitions interfering 
+  but for a stupid Coq technical reason (transparency of definitions interfering
   with rewrite tactics) we use the following clumsy definition instead:
-*)   
+*)
 Module E : OrderedType with Definition t := BinPos.positive
                                       with Definition eq := (@eq BinPos.positive)
                                       with Definition lt := PositiveOrderedTypeBits.bits_lt
@@ -110,7 +110,7 @@ Module Import WP := WProperties_fun E M.  (* More useful stuff about maps *)
 (* USEFUL LEMMAS ABOUT SETS AND MAPS *)
 
 (* The domain of a map is the set of elements that map to Some(_) *)
-Definition Mdomain {A} (m: M.t A) : S.t := 
+Definition Mdomain {A} (m: M.t A) : S.t :=
    M.fold (fun n _ s => S.add n s) m S.empty.
 
 Lemma StrictOrder_lt: StrictOrder E.lt.
@@ -151,7 +151,7 @@ Qed.
 (* Pay attention here to the use of SortA_equivlistA_eqlistA.
   Here we specialize it to the case there the comparison operator is E.lt,
   but in the proof of Mremove_elements we will use it specialized to a
-  different (though related) total ordering on a different type of list elements. *)  
+  different (though related) total ordering on a different type of list elements. *)
 Lemma SortE_equivlistE_eqlistE:
  forall l l', Sorted E.lt l -> Sorted E.lt l' -> equivlistA E.eq l l' -> eqlistA E.eq l l'.
 Proof.
@@ -169,10 +169,10 @@ apply Proper_lt.
 Qed.
 
 (** **** Exercise: 3 stars (Sremove_elements) *)
-Lemma Sremove_elements:  forall (i: E.t) (s: S.t), 
-  S.In i s -> 
-     eqlistA E.eq (S.elements (S.remove i s)) 
-              (List.filter (fun x => if E.eq_dec x i then false else true) (S.elements s)).                  
+Lemma Sremove_elements:  forall (i: E.t) (s: S.t),
+  S.In i s ->
+     eqlistA E.eq (S.elements (S.remove i s))
+              (List.filter (fun x => if E.eq_dec x i then false else true) (S.elements s)).
 Proof.
 intros.
 assert (PROPER: Proper (E.eq ==> eq)
@@ -194,7 +194,7 @@ Lemma cardinal_map:  forall A B (f: A -> B) g, M.cardinal (M.map f g) = M.cardin
 (** [] *)
 
 (** **** Exercise: 3 stars (Sremove_cardinal_less) *)
-Lemma Sremove_cardinal_less: forall i s, S.In i s -> 
+Lemma Sremove_cardinal_less: forall i s, S.In i s ->
         S.cardinal (S.remove i s) < S.cardinal s.
 (* FILL IN HERE *) Admitted.
 (** [] *)
@@ -211,15 +211,15 @@ Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars (Mremove_elements) *)
-Lemma Mremove_elements:  forall A i s, 
-  M.In i s -> 
-     eqlistA (@M.eq_key_elt A) (M.elements (M.remove i s)) 
-              (List.filter (fun x => if E.eq_dec (fst x) i then false else true) (M.elements s)). 
+Lemma Mremove_elements:  forall A i s,
+  M.In i s ->
+     eqlistA (@M.eq_key_elt A) (M.elements (M.remove i s))
+              (List.filter (fun x => if E.eq_dec (fst x) i then false else true) (M.elements s)).
 (* FILL IN HERE *) Admitted.
 (** [] *)
 
 (** **** Exercise: 3 stars (Mremove_cardinal_less) *)
-Lemma Mremove_cardinal_less: forall A i (s: M.t A), M.In i s -> 
+Lemma Mremove_cardinal_less: forall A i (s: M.t A), M.In i s ->
         M.cardinal (M.remove i s) < M.cardinal s.
 (* FILL IN HERE *) Admitted.
 (** [] *)
@@ -250,15 +250,15 @@ Definition graph := nodemap nodeset.
 Definition adj (g: graph) (i: node) : nodeset :=
   match M.find i g with Some a => a | None => S.empty end.
 
-Definition undirected (g: graph) := 
+Definition undirected (g: graph) :=
    forall i j, S.In j (adj g i) -> S.In i (adj g j).
 
 Definition no_selfloop (g: graph) := forall i, ~ S.In i (adj g i).
 
 Definition nodes (g: graph) := Mdomain g.
 
-Definition subset_nodes 
-                    {P: node -> nodeset -> Prop} 
+Definition subset_nodes
+                    {P: node -> nodeset -> Prop}
                     (P_dec: forall n adj, {P n adj}+{~P n adj})
                     (g: graph) :=
    M.fold (fun n adj s => if P_dec n adj then S.add n s else s) g S.empty.
@@ -282,9 +282,9 @@ Definition remove_node (n: node) (g: graph) : graph :=
   M.map (S.remove n) (M.remove n g).
 
 (** **** Exercise: 3 stars (select_terminates) *)
-Lemma select_terminates: 
+Lemma select_terminates:
   forall (K: nat) (g : graph) (n : S.elt),
-   S.choose (subset_nodes (low_deg_dec K) g) = Some n -> 
+   S.choose (subset_nodes (low_deg_dec K) g) = Some n ->
    M.cardinal (remove_node n g) < M.cardinal g.
 (* FILL IN HERE *) Admitted.
 (** [] *)
@@ -296,12 +296,12 @@ Function select (K: nat) (g: graph) {measure M.cardinal g}: list node :=
   | Some n => n :: select K (remove_node n g)
   | None => nil
   end.
-Proof. apply select_terminates. 
+Proof. apply select_terminates.
 Defined.  (* Do not use Qed on a Function, otherwise it won't Compute! *)
 
 Definition coloring := M.t node.
 
-Definition colors_of (f: coloring) (s: S.t) : S.t := 
+Definition colors_of (f: coloring) (s: S.t) : S.t :=
    S.fold (fun n s => match M.find n f with Some c => S.add c s | None => s end) s S.empty.
 
 Definition color1 (palette: S.t) (g: graph) (n: node) (f: coloring) : coloring :=
@@ -316,11 +316,11 @@ Definition color (palette: S.t) (g: graph) : coloring :=
 (* Now, the proof of correctness of the algorithm.
   We want to show that any coloring produced by the [color] function
   actually respects the interference constraints.  This property is
-  called [coloring_ok].  
+  called [coloring_ok].
 *)
 
 Definition coloring_ok (palette: S.t) (g: graph) (f: coloring) :=
- forall i j, S.In j (adj g i) -> 
+ forall i j, S.In j (adj g i) ->
      (forall ci, M.find i f = Some ci -> S.In ci palette) /\
      (forall ci cj, M.find i f = Some ci -> M.find j f = Some cj -> ci<>cj).
 
@@ -337,9 +337,9 @@ Lemma in_colors_of_1:
 
 (** **** Exercise: 3 stars (color_correct) *)
 Theorem color_correct:
-  forall palette g, 
-       no_selfloop g -> 
-       undirected g -> 
+  forall palette g,
+       no_selfloop g ->
+       undirected g ->
        coloring_ok palette g (color palette g).
 (* FILL IN HERE *) Admitted.
 (** [] *)
@@ -352,7 +352,7 @@ Delimit Scope positive_scope with positive.
 Definition palette: S.t := fold_right S.add S.empty (1::2::3::nil)%positive.
 
 Definition add_edge (e: (E.t*E.t)) (g: graph) : graph :=
- M.add (fst e) (S.add (snd e) (adj g (fst e))) 
+ M.add (fst e) (S.add (snd e) (adj g (fst e)))
   (M.add (snd e) (S.add (fst e) (adj g (snd e))) g).
 
 Definition mk_graph (el: list (E.t*E.t)) :=

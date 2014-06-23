@@ -71,41 +71,41 @@ Lemma perm_2nd: forall l l' (x y z : nat),
   Permutation (x :: l) (z :: l') -> Permutation (x :: y :: l) (z :: y :: l').
 Proof.
   intros.
-  rewrite perm_swap.
-  apply Permutation_sym.
-  rewrite perm_swap.
-  apply Permutation_sym.
-  apply perm_skip.
-  assumption.
+  rewrite perm_swap. apply Permutation_sym.
+  rewrite perm_swap. apply Permutation_sym.
+  apply perm_skip. assumption.
 Qed.
 
 Lemma select_perm: forall i l,
   let (j,r) := select i l in Permutation (i::l) (j::r).
 Proof.
-  intros. generalize dependent i. induction l as [| x xs].
-  simpl. constructor. constructor.
-  simpl. induction i.
-    simpl. 
-    simpl. destruct (select 0 xs) eqn:Heqe2.
-      apply perm_2nd. apply IHxs.
-    simpl. destruct x.
-
-
- intros. destruct (ble_nat i x) eqn:Heqe.
-    destruct (select i xs) eqn:Heqe2.
-      apply perm_2nd. apply IHxs.
-
-    destruct (select x xs) eqn:Heqe2.
-      rewrite perm_swap.
-Abort.
+  intros. generalize dependent i.
+  induction l as [| x xs]; intros; simpl.
+    repeat constructor.
+    destruct (ble_nat i x).
+      specialize (IHxs i). destruct (select i xs).
+        apply perm_2nd. apply IHxs.
+      specialize (IHxs x). destruct (select x xs).
+        rewrite perm_swap. apply perm_2nd. apply IHxs.
+Qed.
 
 Lemma selsort_perm:
-  forall n,
-  forall l, length l = n -> Permutation l (selsort l n).
+  forall n l, length l = n -> Permutation l (selsort l n).
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros. generalize dependent l.
+  induction n; destruct l; intros; subst; simpl.
+  - reflexivity.
+  - inversion H.
+  - constructor.
+  - assert (SP := select_perm n0 l).
+    destruct (select n0 l).
+    eapply Permutation_trans; [ apply SP |].
+    constructor.
+    apply Permutation_length in SP. simpl in SP. inversion SP.
+    apply IHn. simpl in H. rewrite <- H1. inversion H. reflexivity.
+Qed.
 
-Theorem selection_sort_perm:
-  forall l, Permutation l (selection_sort l).
+Theorem selection_sort_perm: forall l, Permutation l (selection_sort l).
 Proof.
-(* FILL IN HERE *) Admitted.
+  induction l. reflexivity. apply selsort_perm. reflexivity.
+Qed.
