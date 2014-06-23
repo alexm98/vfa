@@ -1,7 +1,7 @@
 (* Selection sort, with specification and proof of correctness.
   Andrew W. Appel, 2013.
   By the way, you should never use selection sort in real life.
-  If you want a simple but reasonably efficient 
+  If you want a simple but reasonably efficient
   quadratic-time sorting algorithm, use insertion sort.
   And of course, you NEVER use bubble sort.  Everybody knows that!
   https://www.youtube.com/watch?v=k4RRi_ntQc8
@@ -45,7 +45,7 @@ Qed.
 Fixpoint select (i: nat) (l: list nat) : nat * list nat :=
 match l with
 |  nil => (i, nil)
-|  h::t => if ble_nat i h 
+|  h::t => if ble_nat i h
                then let (j, l') := select i t in (j, h::l')
                else let (j,l') := select h t in (j, i::l')
 end.
@@ -67,14 +67,40 @@ simpl.
 reflexivity.
 Qed.
 
-Lemma select_perm: forall i l, 
-  let (j,r) := select i l in
-   Permutation (i::l) (j::r).
+Lemma perm_2nd: forall l l' (x y z : nat),
+  Permutation (x :: l) (z :: l') -> Permutation (x :: y :: l) (z :: y :: l').
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros.
+  rewrite perm_swap.
+  apply Permutation_sym.
+  rewrite perm_swap.
+  apply Permutation_sym.
+  apply perm_skip.
+  assumption.
+Qed.
+
+Lemma select_perm: forall i l,
+  let (j,r) := select i l in Permutation (i::l) (j::r).
+Proof.
+  intros. generalize dependent i. induction l as [| x xs].
+  simpl. constructor. constructor.
+  simpl. induction i.
+    simpl. 
+    simpl. destruct (select 0 xs) eqn:Heqe2.
+      apply perm_2nd. apply IHxs.
+    simpl. destruct x.
+
+
+ intros. destruct (ble_nat i x) eqn:Heqe.
+    destruct (select i xs) eqn:Heqe2.
+      apply perm_2nd. apply IHxs.
+
+    destruct (select x xs) eqn:Heqe2.
+      rewrite perm_swap.
+Abort.
 
 Lemma selsort_perm:
-  forall n, 
+  forall n,
   forall l, length l = n -> Permutation l (selsort l n).
 Proof.
 (* FILL IN HERE *) Admitted.

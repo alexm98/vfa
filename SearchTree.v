@@ -17,8 +17,11 @@ Arguments Empty_set {U} x.
 
 Lemma In_Singleton_iff:
   forall U (x y: U), In (Singleton x) y <-> x=y.
-Proof. 
-(* FILL IN HERE *) Admitted.
+Proof.
+  intros. split; intros.
+    inversion H. reflexivity.
+    subst. constructor.
+Qed.
 
 Lemma In_Union_iff:
  forall U (B C: Ensemble U) x,
@@ -34,12 +37,12 @@ intros. extensionality x. apply prop_ext.
 
 Lemma Union_sym:
  forall {U} (B C: Ensemble U), Union B C = Union C B.
-Proof. 
+Proof.
   intros. extensionality x. apply prop_ext.
 (* FILL IN HERE *) Admitted.
 
 Lemma Union_assoc:
-  forall {U} (A B C: Ensemble U), 
+  forall {U} (A B C: Ensemble U),
    Union A (Union B C) = Union (Union A B) C.
 Proof.
 (* FILL IN HERE *) Admitted.
@@ -47,19 +50,19 @@ Proof.
 (*  PROGRAM FOR BINARY SEARCH TREES *)
 
 Inductive tree  : Type :=
- | E : tree 
+ | E : tree
  | T: tree -> Z -> tree -> tree.
 
 Fixpoint member (x: Z) (t : tree) : bool :=
   match t with
   | E => false
-  | T tl k tr => if Z.ltb x k then member x tl 
+  | T tl k tr => if Z.ltb x k then member x tl
                          else if Z.ltb k x then member x tr
                          else true
   end.
 
 Fixpoint insert (x: Z) (s: tree) :=
- match s with 
+ match s with
  | E => T E x E
  | T a y b => if Z.ltb x y then T (insert x a) y b
                         else if Z.ltb y x then T a y (insert x b)
@@ -98,7 +101,7 @@ Proof.
 (* FILL IN HERE *) Admitted.
 
 Theorem insert_searchtree:
-  forall k t, 
+  forall k t,
    SearchTree t -> SearchTree (insert k t).
 Proof.
 (* FILL IN HERE *) Admitted.
