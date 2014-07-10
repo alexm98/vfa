@@ -44,9 +44,31 @@ apply lt_trans with y; auto.
 Qed.
 
 (** **** Exercise: 2 stars (key_eq_dec) *)
+(*
+Definition key_eq_dec' (x y : key) : {x=y}+{x<>y} :=
+  match lt_eq_gt x y with
+  | Lt z => inr (eq_refl x)
+  | Eq z => inl (eq x y)
+  | Gt z => inr (not (eq x y))
+  end.
+*)
+
 Lemma key_eq_dec: forall x y : key, {x=y}+{x<>y}.
-(* FILL IN HERE *) Admitted.
+Proof.
+  intros. destruct (lt_eq_gt x y).
+  right. intro. subst. contradiction (lt_irrefl y).
+  left. apply e.
+  right. intro. subst. contradiction (lt_irrefl y).
+Qed.
 (** [] *)
+
+(*
+match goal with
+| |- T _ _ _ _ <> E => intro Hx; inversion Hx
+| |- match ?t with T _ _ _ _ => _ | E => _ end <> E => destruct t
+| |- match ?c with Red => _ | Black => _ end <> E => destruct c
+end
+*)
 
 Module Type SET_OF_ORDERED.
   Parameter set : Type.

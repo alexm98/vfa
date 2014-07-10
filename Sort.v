@@ -79,7 +79,7 @@ Qed.
 Theorem insert_perm: forall l l' i,
   Permutation l l' -> Permutation (i::l) (insert i l').
 Proof.
-  intros. destruct l' as [| y ys].
+  intros. destruct l'.
     simpl. apply perm_skip. apply H.
     destruct l.
       apply Permutation_nil in H. rewrite H. reflexivity.
