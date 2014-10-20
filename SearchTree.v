@@ -5,13 +5,9 @@
 (* IMPORTS *)
 Require Import ZArith Permutation Omega List Classical_sets.
 Require Import FunctionalExtensionality.
-Require Export CpdtTactics.
 Axiom prop_ext: ClassicalFacts.prop_extensionality.
 Implicit Arguments prop_ext.
 Open Scope Z.
-
-Ltac inv H := inversion H; subst; clear H.
-Ltac appinv t H := apply t in H; inv H.
 
 (* A FEW LEMMAS ABOUT SET UNION, ET CETERA *)
 Arguments In {U} A x.
@@ -76,6 +72,14 @@ Proof.
   - apply Union_intror. apply Union_intror. apply H0.
 Qed.
 
+Lemma Union_refl: forall {U} (A: Ensemble U), Union A A = A.
+Proof.
+  intros. extensionality x. apply prop_ext.
+  split; intros.
+    destruct H; apply H.
+  constructor. apply H.
+Qed.
+
 (*  PROGRAM FOR BINARY SEARCH TREES *)
 
 Inductive tree  : Type :=
@@ -100,91 +104,89 @@ Fixpoint insert (x: Z) (s: tree) :=
 
 (* SPECIFICATIONS AND PROOF *)
 
-Inductive OccursTree : Z -> tree -> Prop :=
-  | occ_root n a b : OccursTree n (T a n b)
-  | occ_left n a b : forall p, OccursTree n a -> OccursTree n (T a p b)
-  | occ_right n a b : forall p, OccursTree n b -> OccursTree n (T a p b).
-
-Hint Constructors OccursTree.
-
-Definition all_lt (n : Z) (t : tree) := forall x, OccursTree x t -> x < n.
-Definition all_gt (n : Z) (t : tree) := forall x, OccursTree x t -> x > n.
-
-Hint Extern 1 (all_lt _ _) => unfold all_lt; intros.
-Hint Extern 1 (all_gt _ _) => unfold all_gt; intros.
+Fixpoint allb (R : Z -> Z -> bool) (x: Z) (s: tree) : bool :=
+  match s with
+    | E => true
+    | T l n r => andb (R x n) (andb (allb R x l) (allb R x r))
+  end.
 
 Inductive SearchTree: tree -> Prop :=
-(* Getting this right is the most important part of the work,
- *   and it's not completely obvious.
- *)
-  | bst_empty : SearchTree E
-  | bst_node n a b : SearchTree a -> SearchTree b
-                       -> all_lt n a -> all_gt n b
-                       -> SearchTree (T a n b).
+  | st_empty : SearchTree E
+  | st_node l n r : SearchTree l -> allb Z.gtb n l = true
+                 -> SearchTree r -> allb Z.ltb n r = true
+                 -> SearchTree (T l n r).
 
-Hint Constructors SearchTree.
+Inductive Contents:  Ensemble Z -> tree -> Prop :=
+  | Ct_E: Contents Empty_set E
+  | Ct_U lset l n rset r: Contents lset l
+             -> Contents rset r
+             -> Contents (Union (Singleton n) (Union lset rset)) (T l n r).
 
-Inductive Contents: Ensemble Z -> tree -> Prop :=
-| Ct_E: Contents Empty_set E
-| Ct_U A B l x r: Contents A l -> Contents B r
-    -> Contents (Union A B) (T l x r).
+Ltac inv H := inversion H; subst; clear H.
 
-Theorem member_or: forall k z t1 t2,
-  member k (T t1 z t2) = true -> member k t1 = true \/ member k t2 = true \/ k = z.
+Lemma allb_split : forall R n l1 z l2,
+  allb R n (T l1 z l2) = true
+    -> R n z = true /\ allb R n l1 = true /\ allb R n l2 = true.
 Proof.
-  intros. inversion H.
-  destruct (k <? z) eqn:Heqe;
-    [ apply Z.ltb_lt in Heqe | apply Z.ltb_nlt in Heqe ].
-  - left. reflexivity.
-  - destruct (z <? k) eqn:Heqe2;
-      [ apply Z.ltb_lt in Heqe2 | apply Z.ltb_nlt in Heqe2 ].
-    right. left. reflexivity.
-    inversion H. crush.
+  intros.
+  apply Bool.andb_true_iff in H. inversion H.
+  apply Bool.andb_true_iff in H1. inversion H1.
+  intuition.
+Qed.
+
+Lemma allb_ltb_spec : forall R cts l n k,
+  Contents cts l -> In cts k -> allb R n l = true -> R n k = true.
+Proof.
+  intros.
+  generalize dependent cts.
+  induction l; intros; inv H. inv H0.
+  apply allb_split in H1.
+  inversion H1. inversion H2.
+  inv H0; inv H6.
+  - assumption.
+  - apply IHl1 with (cts := lset); try assumption.
+  - apply IHl2 with (cts := rset); try assumption.
+Qed.
+
+Lemma ltb_antisym : forall k n, (k <? n) = false -> (n <? k) = false -> n = k.
+Proof.
+  intros.
+  apply Z.ltb_ge in H.
+  apply Z.ltb_ge in H0.
+  omega.
 Qed.
 
 Theorem member_spec:
-  forall k t, SearchTree t -> (member k t = true <-> OccursTree k t).
-Proof.
-  intros. split; induction t; intros; simpl.
-  - crush.
-  - inv H. appinv member_or H0; crush.
-  - inversion H0.
-  - destruct (k <? z) eqn:Heqe;
-      [ apply Z.ltb_lt in Heqe | apply Z.ltb_nlt in Heqe ].
-    + inv H. inv H0; crush.
-      apply H7 in H2. omega.
-    + destruct (z <? k) eqn:Heqe2;
-        [ apply Z.ltb_lt in Heqe2 | apply Z.ltb_nlt in Heqe2 ].
-      * inv H. inv H0; crush.
-      * crush.
-Qed.
-
-Theorem member_spec_orig:
   forall k cts t,
     SearchTree t ->
     Contents cts t ->
-    (In cts k <->  member k t = true).
+    (In cts k <-> member k t = true).
 Proof.
-  intros. split; intros; induction t; crush.
-    inv H. inv H0. inv H1.
-  destruct (k <? z) eqn:Heqe;
-    [ apply Z.ltb_lt in Heqe | apply Z.ltb_nlt in Heqe ].
-    apply IHt1. inv H. crush.
-Abort.
-
-Theorem insert_occurstree:
-  forall k x t, OccursTree x t -> OccursTree x (insert k t).
-Proof.
-  intros.
-  induction t; intros. crush.
-  simpl. destruct (k <? z) eqn:Heqe;
-      [ apply Z.ltb_lt in Heqe | apply Z.ltb_nlt in Heqe ].
-    inv H; crush.
-  destruct (z <? k) eqn:Heqe2;
-      [ apply Z.ltb_lt in Heqe2 | apply Z.ltb_nlt in Heqe2 ].
-    inv H; crush.
-  assert (k = z). omega.
-  rewrite H0. crush.
+  split; intros.
+  - induction H0; inv H1; simpl; inv H; inv H0.
+    + rewrite Z.ltb_irrefl; reflexivity.
+    + destruct (k <? n) eqn:Heqe.
+        apply IHContents1; assumption.
+      pose (allb_ltb_spec Z.gtb lset l n k H0_ H H5).
+      rewrite Z.gtb_ltb in e.
+      rewrite Heqe in e. inversion e.
+    + destruct (k <? n) eqn:Heqe.
+        pose (allb_ltb_spec Z.ltb rset r n k H0_0 H H7).
+        apply Z.ltb_lt in Heqe.
+        apply Z.ltb_lt in e. omega.
+      destruct (n <? k) eqn:Heqe2.
+        apply IHContents2; assumption.
+      reflexivity.
+  - induction H0; inv H1; simpl; inv H.
+    apply In_Union_iff.
+    destruct (k <? n) eqn:Heqe.
+      right. apply In_Union_iff. left.
+      apply IHContents1; assumption.
+    destruct (n <? k) eqn:Heqe2.
+      right. apply In_Union_iff. right.
+      apply IHContents2; assumption.
+    left. apply In_Singleton_iff.
+    apply ltb_antisym; assumption.
 Qed.
 
 Theorem insert_contents:
@@ -194,44 +196,88 @@ Theorem insert_contents:
     Contents (Union (Singleton k) cts) (insert k t).
 Proof.
   intros.
-  generalize dependent k.
-  induction t.
-    constructor; crush.
-    inv H0. inv H.
-Abort.
+  induction H0. simpl.
+    replace (@Empty_set Z) with (@Union Z Empty_set Empty_set).
+      repeat constructor.
+    apply Union_refl.
+  simpl.
+  inv H.
+  destruct (k <? n) eqn:Heqe.
+    replace (Union (Singleton k) (Union (Singleton n) (Union lset rset)))
+      with (Union (Singleton n) (Union (Union (Singleton k) lset) rset)).
+      constructor.
+        apply IHContents1; assumption.
+      assumption.
+    rewrite Union_sym.
+    repeat rewrite <- Union_assoc. f_equal.
+    rewrite (Union_sym rset).
+    repeat rewrite <- Union_assoc. f_equal.
+    rewrite Union_sym. reflexivity.
+  destruct (n <? k) eqn:Heqe2.
+    replace (Union (Singleton k) (Union (Singleton n) (Union lset rset)))
+      with (Union (Singleton n) (Union lset (Union (Singleton k) rset))).
+      constructor. assumption.
+      apply IHContents2; assumption.
+    repeat rewrite <- Union_assoc.
+    rewrite Union_sym.
+    repeat rewrite <- Union_assoc.
+    rewrite Union_sym.
+    repeat rewrite <- Union_assoc. f_equal.
+    rewrite Union_sym.
+    repeat rewrite <- Union_assoc. reflexivity.
+  pose (ltb_antisym _ _ Heqe Heqe2). rewrite e.
+  replace (Union (Singleton k) (Union (Singleton k) (Union lset rset)))
+    with (Union (Singleton k) (Union lset rset)).
+    constructor; assumption.
+  repeat rewrite Union_assoc.
+  rewrite Union_refl. reflexivity.
+Qed.
 
-Theorem insert_searchtree:
-  forall k t, SearchTree t -> SearchTree (insert k t).
+Lemma allb_impl : forall R z t k,
+  allb R z t = true -> R z k = true -> allb R z (insert k t) = true.
 Proof.
   intros.
-  induction t; intros; crush.
-    inv H; crush.
-    constructor; crush; simpl.
-      unfold all_lt. intros. inv H.
-    unfold all_gt. intros. inv H.
-  inv H; crush.
-  destruct (k <? z) eqn:Heqe;
-    [ apply Z.ltb_lt in Heqe | apply Z.ltb_nlt in Heqe ].
-    constructor; crush.
-    unfold all_lt. intros.
-    unfold all_lt in *.
-    unfold all_gt in *.
-    apply H5.
-    apply member_spec. auto.
-    admit.
-  destruct (z <? k) eqn:Heqe2;
-    [ apply Z.ltb_lt in Heqe2 | apply Z.ltb_nlt in Heqe2 ].
-    constructor; crush.
-    unfold all_gt. intros.
-    unfold all_lt in *.
-    unfold all_gt in *.
-    apply H6.
-    apply member_spec. auto.
-    admit.
-  constructor; crush.
-  unfold all_lt in *.
-  unfold all_gt in *.
-  apply Znot_lt_ge in Heqe.
-  apply Znot_lt_ge in Heqe2.
+  induction t; simpl.
+    apply Bool.andb_true_iff.
+    split. assumption.
+    reflexivity.
+  inv H.
+  apply Bool.andb_true_iff in H2.
+  inversion H2.
+  apply Bool.andb_true_iff in H1.
+  inversion H1.
+  destruct (k <? z0) eqn:Heqe; simpl.
+    f_equal. f_equal.
+    specialize (IHt1 H3).
+    rewrite IHt1. auto.
+  destruct (z0 <? k) eqn:Heqe2; simpl.
+    f_equal. f_equal.
+    specialize (IHt2 H4).
+    rewrite IHt2. auto.
+  pose (ltb_antisym _ _ Heqe Heqe2). rewrite e.
+  reflexivity.
+Qed.
+
+Theorem insert_searchtree:
+  forall k t,
+   SearchTree t -> SearchTree (insert k t).
+Proof.
   intros.
-Abort.
+  induction t; simpl.
+    constructor; auto.
+  inv H.
+  destruct (k <? z) eqn:Heqe.
+    constructor; auto.
+    apply allb_impl with (R := Z.gtb).
+      assumption.
+    rewrite Z.gtb_ltb.
+    assumption.
+  destruct (z <? k) eqn:Heqe2.
+    constructor; auto.
+    apply allb_impl with (R := Z.ltb).
+    assumption. assumption.
+  constructor; auto;
+  pose (ltb_antisym _ _ Heqe Heqe2);
+  rewrite <- e;
+  assumption.
+Qed.
